@@ -1,7 +1,6 @@
 // src/firebase/firebaseConfig.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth"; // 🔹 Para login de admin (opcional)
 
 // 🔹 Configuración de Firebase
 const firebaseConfig = {
@@ -14,12 +13,23 @@ const firebaseConfig = {
   measurementId: "G-DGKNJ91QX8"
 };
 
-// 🔹 Inicializar la app
+// 🔹 Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 
-// 🔹 Exportaciones nombradas
-export const db = getFirestore(app); 
-export const auth = getAuth(app); // Para manejo de usuarios si lo necesitas
+// ✅ Exporta Firestore normalmente (no da problemas en tests)
+export const db = getFirestore(app);
 
-
+// ✅ Auth: carga perezosa SOLO en navegador para evitar errores en Jest/Node
+export let auth = null;
+export const ensureAuth = async () => {
+  if (auth) return auth;
+  // Solo en entorno navegador (no en Jest/Node)
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    const { getAuth } = await import("firebase/auth");
+    auth = getAuth(app);
+    return auth;
+  }
+  // En tests/Node devolvemos null
+  return null;
+};
 
